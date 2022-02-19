@@ -1,0 +1,25 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "CryptoSwift",
+        "repositoryURL": "https://github.com/GoodNotes/CryptoSwift.git",
+        "state": {
+          "branch": "swiftwasm-support",
+          "revision": "a8bc733bc578312b1a507da3417f92d311e3143d",
+          "version": null
+        }
+      },
+      {
+        "package": "Compute",
+        "repositoryURL": "https://github.com/AndrewBarba/swift-compute-runtime",
+        "state": {
+          "branch": "main",
+          "revision": "c8037263468efe5cfac015d39b6aec90e692e297",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}

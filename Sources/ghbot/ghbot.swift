@@ -7,16 +7,22 @@ extension String: Error {}
 struct CheckSuitePayload: Codable {
   let action: String
   let checkSuite: CheckSuite
-
 }
 
 struct CheckSuite: Codable {
+  let headSha: String
   let status: String
   let conclusion: String
   let pullRequests: [PullRequest]
+
   struct PullRequest: Codable {
     let url: String
     let id: Int
+    let head: Head
+
+    struct Head: Codable {
+      let sha: String
+    }
   }
 }
 struct PullRequest: Codable {
@@ -39,10 +45,10 @@ struct Ghbot {
         throw "No GITHUB_TOKEN"
       }
 
-      func validateSignature(payload: [UInt8]) async throws {
+      func validateSignature(payload: [UInt8]) async throws -> Bool {
         guard let secret = secret else {
           // noop for development
-          return
+          return true
         }
         let hmac = try HMAC(key: secret, variant: .sha2(.sha256))
         let expected =
@@ -76,7 +82,8 @@ struct Ghbot {
         guard payload.action == "completed",
           payload.checkSuite.status == "completed",
           payload.checkSuite.conclusion == "success",
-          payload.checkSuite.pullRequests.count == 1
+          payload.checkSuite.pullRequests.count == 1,
+          payload.checkSuite.pullRequests[0].head.sha == payload.checkSuite.headSha
         else {
           try await res.status(200).send("Skip")
           return

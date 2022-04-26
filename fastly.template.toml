@@ -1,0 +1,22 @@
+# This file describes a Fastly Compute@Edge package. To learn more visit:
+# https://developer.fastly.com/reference/fastly-toml/
+
+authors = []
+description = ""
+language = "other"
+manifest_version = 2
+name = "swiftwasm-ghbot"
+service_id = "XXXX"
+
+[local_server]
+
+  [local_server.backends]
+
+    [local_server.backends."api.github.com"]
+      url = "https://api.github.com"
+
+  [local_server.dictionaries]
+
+    [local_server.dictionaries.env]
+      file = "./env.json"
+      format = "json"

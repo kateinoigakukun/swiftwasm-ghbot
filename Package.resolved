@@ -15,8 +15,17 @@
         "repositoryURL": "https://github.com/AndrewBarba/swift-compute-runtime",
         "state": {
           "branch": "main",
-          "revision": "c8037263468efe5cfac015d39b6aec90e692e297",
+          "revision": "9ef53204b51c48ed4fdcc995cd93d40ef8199293",
           "version": null
+        }
+      },
+      {
+        "package": "swift-crypto",
+        "repositoryURL": "https://github.com/apple/swift-crypto",
+        "state": {
+          "branch": null,
+          "revision": "33a20e650c33f6d72d822d558333f2085effa3dc",
+          "version": "2.5.0"
         }
       }
     ]

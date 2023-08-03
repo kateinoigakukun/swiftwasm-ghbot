@@ -43,9 +43,9 @@ struct Repository: Codable {
 struct Ghbot {
   static func main() async throws {
     try await onIncomingRequest { req, res in
-      let env = try Compute.Dictionary(name: "env")
-      let secret = env.get("GITHUB_WEBHOOK_SECRET")
-      guard let token = env.get("GITHUB_TOKEN") else {
+      let env = try Fastly.ConfigStore(name: "env")
+      let secret = try env.get("GITHUB_WEBHOOK_SECRET")
+      guard let token = try env.get("GITHUB_TOKEN") else {
         throw "No GITHUB_TOKEN"
       }
 

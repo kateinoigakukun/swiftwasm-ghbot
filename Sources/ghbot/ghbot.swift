@@ -7,6 +7,7 @@ extension String: Error {}
 struct CheckSuitePayload: Codable {
   let action: String
   let checkSuite: CheckSuite
+  let repository: Repository
 }
 
 struct CheckSuite: Codable {
@@ -33,6 +34,9 @@ struct PullRequest: Codable {
     let id: Int
     let name: String
   }
+}
+struct Repository: Codable {
+  let full_name: String
 }
 
 @main
@@ -79,7 +83,8 @@ struct Ghbot {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         let payload = try decoder.decode(CheckSuitePayload.self, from: Data(payloadBytes))
-        guard payload.action == "completed",
+        guard payload.repository.full_name == "swiftwasm/swiftwasm-build",
+          payload.action == "completed",
           payload.checkSuite.status == "completed",
           payload.checkSuite.conclusion == "success",
           payload.checkSuite.pullRequests.count == 1,
@@ -101,7 +106,7 @@ struct Ghbot {
         let pr = try await prResponse.decode(PullRequest.self)
 
         let isMergeable = pr.labels.contains(where: {
-          $0.name == ":arrow_heading_down: Upstream Tracking"
+          $0.name == "downstreaming"
         })
         guard isMergeable else {
           try await res.status(200).send("Skip")

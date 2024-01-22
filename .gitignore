@@ -8,3 +8,4 @@ DerivedData/
 fastly.toml
 env.json
 pkg
+/bin

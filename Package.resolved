@@ -1,34 +1,32 @@
 {
-  "object": {
-    "pins": [
-      {
-        "package": "CryptoSwift",
-        "repositoryURL": "https://github.com/GoodNotes/CryptoSwift.git",
-        "state": {
-          "branch": "swiftwasm-support",
-          "revision": "a8bc733bc578312b1a507da3417f92d311e3143d",
-          "version": null
-        }
-      },
-      {
-        "package": "Compute",
-        "repositoryURL": "https://github.com/AndrewBarba/swift-compute-runtime",
-        "state": {
-          "branch": "main",
-          "revision": "9ef53204b51c48ed4fdcc995cd93d40ef8199293",
-          "version": null
-        }
-      },
-      {
-        "package": "swift-crypto",
-        "repositoryURL": "https://github.com/apple/swift-crypto",
-        "state": {
-          "branch": null,
-          "revision": "33a20e650c33f6d72d822d558333f2085effa3dc",
-          "version": "2.5.0"
-        }
+  "pins" : [
+    {
+      "identity" : "compute",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-cloud/Compute",
+      "state" : {
+        "revision" : "542e212eb2f8eed7740205de30cc57e9e0845cfe",
+        "version" : "2.18.0"
       }
-    ]
-  },
-  "version": 1
+    },
+    {
+      "identity" : "cryptoswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/krzyzanowskim/CryptoSwift.git",
+      "state" : {
+        "revision" : "7892a123f7e8d0fe62f9f03728b17bbd4f94df5c",
+        "version" : "1.8.1"
+      }
+    },
+    {
+      "identity" : "swift-crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-crypto",
+      "state" : {
+        "revision" : "60f13f60c4d093691934dc6cfdf5f508ada1f894",
+        "version" : "2.6.0"
+      }
+    }
+  ],
+  "version" : 2
 }

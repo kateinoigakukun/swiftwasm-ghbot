@@ -27,16 +27,16 @@ struct CheckSuite: Codable {
   }
 }
 struct PullRequest: Codable {
-  let id: Int
+  let id: UInt64
   let labels: [Label]
 
   struct Label: Codable {
-    let id: Int
+    let id: UInt64
     let name: String
   }
 }
 struct Repository: Codable {
-  let full_name: String
+  let fullName: String
 }
 
 @main
@@ -83,7 +83,7 @@ struct Ghbot {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         let payload = try decoder.decode(CheckSuitePayload.self, from: Data(payloadBytes))
-        guard payload.repository.full_name == "swiftwasm/swiftwasm-build",
+        guard payload.repository.fullName == "swiftwasm/swiftwasm-build",
           payload.action == "completed",
           payload.checkSuite.status == "completed",
           payload.checkSuite.conclusion == "success",

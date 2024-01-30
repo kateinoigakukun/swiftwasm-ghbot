@@ -28,7 +28,12 @@ struct CheckSuite: Codable {
 }
 struct PullRequest: Codable {
   let id: UInt64
+  let user: User
   let labels: [Label]
+
+  struct User: Codable {
+    let id: UInt64
+  }
 
   struct Label: Codable {
     let id: UInt64
@@ -105,9 +110,7 @@ struct Ghbot {
             ], backend: "api.github.com"))
         let pr = try await prResponse.decode(PullRequest.self)
 
-        let isMergeable = pr.labels.contains(where: {
-          $0.name == "downstreaming"
-        })
+        let isMergeable = self.isAutoMergeable(pr: pr)
         guard isMergeable else {
           try await res.status(200).send("Skip")
           return
@@ -131,5 +134,18 @@ struct Ghbot {
         return
       }
     }
+  }
+
+  static func isAutoMergeable(pr: PullRequest) -> Bool {
+    if pr.user.id == 138581863 { // "swiftwasm-bot"
+      return pr.labels.contains(where: {
+        $0.name == "downstreaming"
+      })
+    }
+    if pr.user.id == 49699333 { // "dependabot[bot]"
+      return true
+    }
+
+    return false
   }
 }

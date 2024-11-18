@@ -18,7 +18,7 @@ struct CheckSuite: Codable {
 
   struct PullRequest: Codable {
     let url: String
-    let id: Int
+    let id: UInt64
     let head: Head
 
     struct Head: Codable {
@@ -85,55 +85,98 @@ struct Ghbot {
         print("payload:", payload)
         try await res.status(200).send("OK")
       case "check_suite":
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        let payload = try decoder.decode(CheckSuitePayload.self, from: Data(payloadBytes))
-        guard payload.repository.fullName == "swiftwasm/swiftwasm-build",
-          payload.action == "completed",
-          payload.checkSuite.status == "completed",
-          payload.checkSuite.conclusion == "success",
-          payload.checkSuite.pullRequests.count == 1,
-          payload.checkSuite.pullRequests[0].head.sha == payload.checkSuite.headSha
-        else {
-          try await res.status(200).send("Skip")
-          return
+        try await traceError("processing check_suite event", res) {
+          try await respondCheckSuiteEvent(req: req, res: res, payloadBytes: payloadBytes, token: token)
         }
-        let prURL = payload.checkSuite.pullRequests[0].url
-
-        let prResponse = try await fetch(
-          prURL,
-          .options(
-            headers: [
-              "Accept": "application/vnd.github.v3+json",
-              "Authorization": "token \(token)",
-              "User-Agent": "swiftwasm-ghbot",
-            ], backend: "api.github.com"))
-        let pr = try await prResponse.decode(PullRequest.self)
-
-        let isMergeable = self.isAutoMergeable(pr: pr)
-        guard isMergeable else {
-          try await res.status(200).send("Skip")
-          return
-        }
-        let mergeEndpoint = "\(prURL)/merge"
-        _ = try await fetch(
-          mergeEndpoint,
-          .options(
-            method: .put,
-            body: .text("{\"merge_method\": \"merge\"}"),
-            headers: [
-              "Accept": "application/vnd.github.v3+json",
-              "Authorization": "token \(token)",
-              "User-Agent": "swiftwasm-ghbot",
-            ]
-          )
-        )
-        try await res.status(200).send("Done")
       default:
         try await res.status(404).send()
         return
       }
     }
+  }
+
+  @discardableResult
+  static func traceError<R>(_ name: @autoclosure () -> String, _ res: OutgoingResponse, _ body: () async throws -> R?) async throws -> R? {
+    do {
+      return try await body()
+    } catch {
+      try await res.status(500).send("Error during \(name()): \(error)")
+      return nil
+    }
+  }
+
+  static func respondCheckSuiteEvent(
+    req: IncomingRequest, res: OutgoingResponse,
+    payloadBytes: [UInt8],
+    token: String
+  ) async throws {
+    func payloadToDisplay() -> String {
+      String(data: Data(payloadBytes), encoding: .utf8) ?? "failed to decode payload"
+    }
+    let payload = try await traceError(
+      "decoding check suite payload (payload[\(payloadBytes.count) bytes]: \(payloadToDisplay()))",
+      res
+    ) {
+      try await decodeCheckSuitePayload(res: res, payloadBytes: payloadBytes)
+    }
+    guard let payload else { return }
+    let prURL = payload.checkSuite.pullRequests[0].url
+
+    let pr = try await traceError("fetching PR", res) { () -> PullRequest? in
+      let prResponse = try await fetch(
+        prURL,
+        .options(
+          headers: [
+            "Accept": "application/vnd.github.v3+json",
+            "Authorization": "token \(token)",
+            "User-Agent": "swiftwasm-ghbot",
+          ], backend: "api.github.com"))
+      guard prResponse.status == 200 else {
+        try await res.status(500).send("Failed to fetch PR: \(prResponse.status), \(prResponse.body)")
+        return nil
+      }
+      return try await prResponse.decode(PullRequest.self)
+    }
+    guard let pr else { return }
+
+    let isMergeable = self.isAutoMergeable(pr: pr)
+    guard isMergeable else {
+      try await res.status(200).send("Skip")
+      return
+    }
+    let mergeEndpoint = "\(prURL)/merge"
+    try await traceError("merging PR", res) {
+      _ = try await fetch(
+        mergeEndpoint,
+        .options(
+          method: .put,
+          body: .text("{\"merge_method\": \"merge\"}"),
+          headers: [
+            "Accept": "application/vnd.github.v3+json",
+            "Authorization": "token \(token)",
+            "User-Agent": "swiftwasm-ghbot",
+          ]
+        )
+      )
+    }
+    try await res.status(200).send("Done")
+  }
+
+  static func decodeCheckSuitePayload(res: OutgoingResponse, payloadBytes: [UInt8]) async throws -> CheckSuitePayload? {
+    let decoder = JSONDecoder()
+    decoder.keyDecodingStrategy = .convertFromSnakeCase
+    let payload = try decoder.decode(CheckSuitePayload.self, from: Data(payloadBytes))
+    guard payload.repository.fullName == "swiftwasm/swiftwasm-build",
+      payload.action == "completed",
+      payload.checkSuite.status == "completed",
+      payload.checkSuite.conclusion == "success",
+      payload.checkSuite.pullRequests.count == 1,
+      payload.checkSuite.pullRequests[0].head.sha == payload.checkSuite.headSha
+    else {
+      try await res.status(200).send("Skip")
+      return nil
+    }
+    return payload
   }
 
   static func isAutoMergeable(pr: PullRequest) -> Bool {
